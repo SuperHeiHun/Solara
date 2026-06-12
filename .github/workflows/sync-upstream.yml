@@ -21,19 +21,14 @@ jobs:
           git remote add upstream https://github.com/akudamatata/Solara.git
           git fetch upstream main
 
-      - name: Configure git & merge upstream
+      - name: Merge upstream without their workflows
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git checkout main
-          git merge upstream/main --no-edit --allow-unrelated-histories || echo "Already up to date"
-
-      - name: Keep only our workflow files
-        run: |
-          git checkout HEAD -- .github/workflows/sync-upstream.yml
-          git rm -rf .github/workflows/ --ignore-unmatch
-          git checkout HEAD -- .github/workflows/sync-upstream.yml
-          git add .github/workflows/sync-upstream.yml
+          git merge upstream/main --no-commit --no-edit --allow-unrelated-histories || true
+          git checkout HEAD -- .github/workflows/ 2>/dev/null || true
+          git commit --no-edit 2>/dev/null || true
 
       - name: Push
         run: |
