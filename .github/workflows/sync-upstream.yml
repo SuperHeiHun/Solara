@@ -1,0 +1,56 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/akudamatata/Solara.git
+          git fetch upstream
+
+      - name: Merge upstream changes
+        run: |
+          git checkout main
+          git merge upstream/main --no-edit
+        continue-on-error: true
+
+      - name: Check for conflicts
+        id: check_conflicts
+        run: |
+          if git ls-files -u | grep -q .; then
+            echo "conflict=true" >> $GITHUB_OUTPUT
+          else
+            echo "conflict=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push changes (no conflict)
+        if: steps.check_conflicts.outputs.conflict == 'false'
+        run: git push origin main
+
+      - name: Create PR for conflict resolution
+        if: steps.check_conflicts.outputs.conflict == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'Sync with upstream (conflicts)'
+          title: 'Auto Sync: merge upstream changes'
+          body: |
+            This PR contains upstream changes that had merge conflicts.
+            Please resolve the conflicts manually.
+          branch: auto-sync-upstream
+          base: main
