@@ -27,6 +27,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git checkout main
           git merge upstream/main --no-commit --no-edit --allow-unrelated-histories || true
+          git rm --cached -r .github/workflows/ 2>/dev/null || true
           git checkout HEAD -- .github/workflows/ 2>/dev/null || true
           git commit --no-edit 2>/dev/null || true
 
